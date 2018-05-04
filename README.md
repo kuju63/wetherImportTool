@@ -1,0 +1,2 @@
+# wetherImportTool
+Azure Functionsを使用した天気情報取込ツール
