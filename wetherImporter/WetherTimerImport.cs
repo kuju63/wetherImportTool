@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.Threading.Tasks;
 using System.Text;
 using System.Net;
@@ -10,7 +11,7 @@ using Microsoft.Azure.ServiceBus;
 
 namespace wetherImporter
 {
-    public class WetherTimerImport
+    public static class WetherTimerImport
     {
         /// <summary>
         /// 気象庁1時間ごとの降水量CSV取得URL
@@ -38,26 +39,43 @@ namespace wetherImporter
         static readonly string queueName = "wetherQueue";
 
         [FunctionName("wetherImport")]
-        public static async Task ImportWetherData([TimerTrigger("0 */20 * * * *")]TimerInfo timer, TraceWriter writer)
+        public static async Task ImportWetherData([TimerTrigger("0 */10 * * * *")]TimerInfo timer, TraceWriter writer)
         {
             writer.Info($"Start Function : wetherImport at {DateTime.Now}");
 
+            writer.Verbose($"Start download from kishouchou.");
+            // 1時間当たりの降水量情報取得
             var response = await client.GetAsync(url);
+            writer.Verbose($"Downloaded from kishouchou.");
 
             response.EnsureSuccessStatusCode();
 
-            queueClient = new QueueClient("", queueName);
+            var serviceBusEndpoint = ConfigurationManager.AppSettings["ServiceBus"];
+            writer.Verbose($"Service Bus Endpoin: {serviceBusEndpoint}, queueName: {queueName}");
 
+            queueClient = new QueueClient(serviceBusEndpoint, queueName);
+
+            // CSVデータの読込
             using (var stream = (await response.Content.ReadAsStreamAsync()))
             {
-                using (var reader = (new StreamReader(stream)) as TextReader)
+                using (var reader = new StreamReader(stream, encode, true))
                 {
-                    var header = reader.ReadLine();
+                    // 先頭行はヘッダーなので飛ばす
+                    reader.ReadLine();
 
-                    string dataLine = await reader.ReadLineAsync();
-                    if (dataLine != null) {
-                        
-                    }
+                    await Task.Run(async () =>
+                    {
+                        while (!reader.EndOfStream)
+                        {
+                            string dataLine = await reader.ReadLineAsync();
+                            if (dataLine != null) {
+                                var message = new Message(Encoding.UTF8.GetBytes(dataLine));
+                                await queueClient.SendAsync(message);
+                            } else {
+                                break;
+                            }
+                        }
+                    });
                 }
             }
             writer.Info($"End Function : wetherImport at {DateTime.Now}");
