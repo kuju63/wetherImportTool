@@ -67,10 +67,15 @@ namespace wetherImporter
                         while (!reader.EndOfStream)
                         {
                             string dataLine = await reader.ReadLineAsync();
-                            if (dataLine != null) {
+                            if (dataLine != null)
+                            {
+                                // null以外の場合はService Busに登録
                                 var message = new Message(Encoding.UTF8.GetBytes(dataLine));
                                 await queueClient.SendAsync(message);
-                            } else {
+                                writer.Verbose($"send data : {dataLine}");
+                            }
+                            else
+                            {
                                 break;
                             }
                         }
