@@ -50,7 +50,7 @@ namespace wetherImporter
 
             response.EnsureSuccessStatusCode();
 
-            var serviceBusEndpoint = ConfigurationManager.AppSettings["ServiceBus"];
+            var serviceBusEndpoint = ConfigurationManager.AppSettings["AzureServiceBus"];
             writer.Verbose($"Service Bus Endpoin: {serviceBusEndpoint}, queueName: {queueName}");
 
             queueClient = new QueueClient(serviceBusEndpoint, queueName);
