@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Configuration;
-using System.Threading.Tasks;
+using System.IO;
+using System.Net.Http;
 using System.Text;
-using System.Net;
+using System.Threading.Tasks;
+using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Host;
-using System.Net.Http;
-using System.IO;
-using Microsoft.Azure.ServiceBus;
 
 namespace wetherImporter
 {
@@ -68,10 +67,15 @@ namespace wetherImporter
                         while (!reader.EndOfStream)
                         {
                             string dataLine = await reader.ReadLineAsync();
-                            if (dataLine != null) {
+                            if (dataLine != null)
+                            {
+                                // null以外の場合はService Busに登録
                                 var message = new Message(Encoding.UTF8.GetBytes(dataLine));
                                 await queueClient.SendAsync(message);
-                            } else {
+                                writer.Verbose($"send data : {dataLine}");
+                            }
+                            else
+                            {
                                 break;
                             }
                         }
