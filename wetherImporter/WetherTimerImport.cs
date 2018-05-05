@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Configuration;
-using System.Threading.Tasks;
+using System.IO;
+using System.Net.Http;
 using System.Text;
-using System.Net;
+using System.Threading.Tasks;
+using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Host;
-using System.Net.Http;
-using System.IO;
-using Microsoft.Azure.ServiceBus;
 
 namespace wetherImporter
 {
